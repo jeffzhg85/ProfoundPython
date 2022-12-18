@@ -43,10 +43,6 @@ public class MasterDrive extends OpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 		
-		private DcMotor leftWheelF = null;               //Left Wheel Front
-		private DcMotor leftWheelR = null;               //Left Wheel Back
-		private DcMotor rightWheelF = null;              //Right Wheel Front
-		private DcMotor rightWheelR = null;
 
     }
 
