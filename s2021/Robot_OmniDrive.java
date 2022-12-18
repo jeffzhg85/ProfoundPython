@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.s2021;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -31,11 +31,12 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 
 
 public class Robot_OmniDrive {
-    WebcamName webcamName = null;
+    private int random = 10;
 
     //private DcMotor  leftDrive      = null;
     //private DcMotor  rightDrive     = null;
     //private DcMotor  backDrive      = null;
+    WebcamName webcamName = null;
     int cameraMonitorViewId = 0;
     ColorSensor color;
     // Private Members
@@ -54,7 +55,9 @@ public class Robot_OmniDrive {
 
     private double raise = 0;
     private double lower = 0;
-    private double duck = 0;
+    private double red = 0;
+    private double blue = 0;
+
 
     /* Constructor */
     public Robot_OmniDrive() {
@@ -95,6 +98,8 @@ public class Robot_OmniDrive {
         rightWheelF.setDirection(DcMotor.Direction.REVERSE);
         rightWheelR.setDirection(DcMotor.Direction.REVERSE);
 
+        //random = (int) (Math.random() * 10) + 1;
+        random = 10;
 
         webcamName = myOpMode.hardwareMap.get(WebcamName.class, "Webcam 1");
 
@@ -120,7 +125,8 @@ public class Robot_OmniDrive {
         setYaw(-myOpMode.gamepad1.right_stick_x);
         setRaise(myOpMode.gamepad2.right_trigger);
         setLower(myOpMode.gamepad2.left_trigger);
-        setDuck(myOpMode.gamepad1.right_trigger);
+        setRed(myOpMode.gamepad1.right_trigger);
+        setBlue(myOpMode.gamepad1.left_trigger);
     }
 
 
@@ -165,15 +171,15 @@ public class Robot_OmniDrive {
 
         double powerRaise;
         double powerLower;
-        double powerDuck;
-
+        double powerRed;
+        double powerBlue;
         powerRaise = raise;
         powerLower = -lower;
-        powerDuck = duck;
+        powerRed = red;
+        powerBlue = -blue;
 
-        duckWheel.setPower(powerDuck);
-        returnMotor.setPower(powerRaise);
-        returnMotor.setPower(powerLower);
+        duckWheel.setPower(powerRed);
+        duckWheel.setPower(powerBlue);
 
         // normalize all motor speeds so no values exceeds 100%.
         //double max = Math.max(Math.abs(back), Math.abs(right));
@@ -210,12 +216,31 @@ public class Robot_OmniDrive {
 
         //myOpMode.telemetry.addData("Wheels", "L[%+5.2f], R[%+5.2f], B[%+5.2f]", left, right, back);
 
-        if (myOpMode.gamepad2.b) {
+        if (myOpMode.gamepad2.right_bumper) {
+            //open
             clawLeft.setPosition(0);
-            clawRight.setPosition(1);
-        } else if (myOpMode.gamepad2.x) {
-            clawLeft.setPosition(0.5);
-            clawRight.setPosition(0.5);
+            clawRight.setPosition(0.50);
+        } else if (myOpMode.gamepad2.left_bumper) {
+            //close
+            clawLeft.setPosition(0.09);
+            clawRight.setPosition(0.37);
+        }
+
+
+        if (myOpMode.gamepad2.y) {
+            slideHigh();
+        }
+        if (myOpMode.gamepad2.b) {
+            slideMid();
+        }
+        if (myOpMode.gamepad2.a) {
+            slideLow();
+        }
+        if (myOpMode.gamepad2.x) {
+            slideDrop();
+        }
+        if (myOpMode.gamepad2.dpad_down) {
+            slideSubtract(20);
         }
     }
 
@@ -240,8 +265,12 @@ public class Robot_OmniDrive {
         lower = Range.clip(lower1, -1, 1);
     }
 
-    public void setDuck(double duck1) {
-        duck = Range.clip(duck1, -1, 1);
+    public void setRed(double red1) {
+        red = Range.clip(red1, -1, 1);
+    }
+
+    public void setBlue(double blue1) {
+        blue = Range.clip(blue1, -1, 1);
     }
 
     public void setGyro(double motor_output) {
@@ -261,6 +290,101 @@ public class Robot_OmniDrive {
         leftWheelR.setMode(mode);
         rightWheelF.setMode(mode);
         rightWheelR.setMode(mode);
+    }
+
+    private void slideHigh() {
+
+        if (random % 2 == 0) {
+            returnMotor.setDirection(DcMotor.Direction.FORWARD);
+        } else {
+            returnMotor.setDirection(DcMotor.Direction.REVERSE);
+        }
+        returnMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        int target = returnMotor.getCurrentPosition() + 270;
+        int max = 775;
+
+        if (target >= max) {
+            target = max;
+        }
+        returnMotor.setTargetPosition(target);
+        returnMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        returnMotor.setPower(1);
+
+
+    }
+
+    private void slideMid() {
+        if (random % 2 == 0) {
+            returnMotor.setDirection(DcMotor.Direction.FORWARD);
+        } else {
+            returnMotor.setDirection(DcMotor.Direction.REVERSE);
+        }
+
+        returnMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        int target = returnMotor.getCurrentPosition() + 425;
+
+        int max = 425;
+
+        if (target >= max) {
+            target = max;
+        }
+
+        returnMotor.setTargetPosition(target);
+        returnMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        returnMotor.setPower(1);
+    }
+
+    private void slideLow() {
+        if (random % 2 == 0) {
+            returnMotor.setDirection(DcMotor.Direction.FORWARD);
+        } else {
+            returnMotor.setDirection(DcMotor.Direction.REVERSE);
+        }
+        returnMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        int target = returnMotor.getCurrentPosition() + 150;
+        int max = 775;
+
+        if (target >= max) {
+            target = max;
+        }
+        returnMotor.setTargetPosition(target);
+        returnMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        returnMotor.setPower(1);
+    }
+
+    private void slideSubtract(int sub) {
+        if (random % 2 == 0) {
+            returnMotor.setDirection(DcMotor.Direction.FORWARD);
+        } else {
+            returnMotor.setDirection(DcMotor.Direction.REVERSE);
+        }
+        returnMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        int target = returnMotor.getCurrentPosition() - sub;
+
+        if (target <= 0) {
+            target = 0;
+        }
+        returnMotor.setTargetPosition(target);
+        returnMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        returnMotor.setPower(1);
+    }
+    private void slideDrop() {
+
+        //random = random + 1;
+
+        if (returnMotor.getDirection() == DcMotor.Direction.REVERSE)
+            random = 10;
+        else
+            random = 11;
+
+        returnMotor.setPower(0);
+        returnMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+
     }
 }
 

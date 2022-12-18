@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.s2021;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -25,7 +25,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
  * strafing motions, or to perform field-centric driving.
  */
 
-@TeleOp(name = "Robot_Control2021", group = "Opmode RamEaters")
+@TeleOp(name = "Robot_Control", group = "Opmode RamEaters")
 public class Robot_Control extends LinearOpMode {
 
     final double TARGET_DISTANCE = 400.0;    // Hold robot's center 400 mm from target
@@ -33,7 +33,7 @@ public class Robot_Control extends LinearOpMode {
     /* Declare OpMode members. */
     Robot_OmniDrive robot = new Robot_OmniDrive();   // Use Omni-Directional drive system
     Robot_Navigation nav = new Robot_Navigation();  // Use Image Tracking library
-    Robot_Gyro gyro = new Robot_Gyro();  // Use Gyro library
+
 
     @Override
     public void runOpMode() {
@@ -41,7 +41,7 @@ public class Robot_Control extends LinearOpMode {
         // Initialize the robot and navigation
         robot.initDrive(this);
         nav.initVuforia(this, robot);
-        gyro.imuInit(this, robot);
+
 
         // Activate Vuforia (this takes a few seconds)
         nav.activateTracking();
@@ -53,8 +53,8 @@ public class Robot_Control extends LinearOpMode {
 
             // Display any Nav Targets while we wait for the match to start
             nav.targetsAreVisible();
-            //nav.addNavTelemetry();
-            //gyro.addGyroTelemetry();
+            nav.addNavTelemetry();
+
             telemetry.update();
         }
 
@@ -62,7 +62,7 @@ public class Robot_Control extends LinearOpMode {
         while (opModeIsActive()) {
 
             telemetry.addData(">", "Press gamepad1 Left Bumper to track target");
-            telemetry.addData(">", "Press gamepad1 Right Bumper to Gyro");
+
 
             // auto drive or manual drive?
             // In auto drive, the robot will approach any target it can see and then press against it
@@ -71,17 +71,13 @@ public class Robot_Control extends LinearOpMode {
                 // Calculate automatic target approach
                 nav.cruiseControl(TARGET_DISTANCE);
 
-            } else if (gamepad1.right_bumper) {
-
-                gyro.gyroTurn(0);
-
             } else {
                 // Drive the robot using the joysticks
                 robot.manualDrive();
             }
 
             // Build telemetry messages with Navigation Information;
-            // nav.addNavTelemetry();
+            nav.addNavTelemetry();
 
             //telemetry.addData("Red", robot.color.red());
             //telemetry.addData("Green", robot.color.green());

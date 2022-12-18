@@ -27,19 +27,42 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode.s2021;
+package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
+
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+
+
+//package org.firstinspires.ftc.teamcode;
+
+//import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+
+import java.util.List;
+
 
 import java.util.List;
 
@@ -53,12 +76,16 @@ import java.util.List;
  * IMPORTANT: In order to use this OpMode, you need to obtain your own Vuforia license key as
  * is explained below.
  */
-@Autonomous(name = "RedSideAutoLeft2021", group = "Opmode RamEaters")
+@Autonomous(name = "RedSideAutoLeft", group = "Opmode RamEaters")
 //@Disabled
 public class RedSideAutoLeft extends LinearOpMode {
-    private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
-    private static final String LABEL_FIRST_ELEMENT = "Quad";
-    private static final String LABEL_SECOND_ELEMENT = "Single";
+    private static final String TFOD_MODEL_ASSET = "FreightFrenzy_DM.tflite";
+    private static final String[] LABELS = {
+            //"Ball",
+            "Cube",
+            //"Duck",
+            //"Marker"
+    };
     /*
      * IMPORTANT: You need to obtain your own license key to use Vuforia. The string below with which
      * 'parameters.vuforiaLicenseKey' is initialized is for illustration only, and will not function.
@@ -73,18 +100,19 @@ public class RedSideAutoLeft extends LinearOpMode {
      */
     private static final String VUFORIA_KEY =
             "AXiCpJb/////AAABmUeqLpvfjkywirbDoSbnyFYKMf7uB24PIfaJZtIqcZO3L7rZVbsKVlz/fovHxEI6VgkUt3PBpXnp+YmHyLrWimMt2AKMFMYsYeZNRmz0p8jFT8DfQC7mmUgswQuPIm64qc8rxwV7vSb0et6Za96tPoDHYNHzhdiaxbI0UHpe4jCkqNTiRDFz8EVNds9kO7bCIXzxBfYfgTDdtjC5JRJ/drtM6DZnTXOqz3pdM85JEVgQqL9wBxUePSjbzyMo9e/FgxluCuWtxHraRJeeuvAlFwAb8wVAoV1cm02qIew0Vh0pDVJqy04gu62CJPhv/wwnXCKywUIEzVMbOLe7muycyHoT6ltpAn4O4s4Z82liWs9x";
+    private static final double TURN_P = 0.05;
     String test = "";
     private DcMotor leftWheelF = null;               //Left Wheel Front
     private DcMotor leftWheelR = null;               //Left Wheel Back
     private DcMotor rightWheelF = null;              //Right Wheel Front
     private DcMotor rightWheelR = null;
-    private DcMotor armWheel = null;
-    private DcMotor intakeWheel1 = null;
-    private DcMotor intakeWheel2 = null;
-    //private DcMotor intakeWheel3 = null;
-    private Servo wobbleServoHand = null;
-    private Servo ringPush = null;
-    private DcMotor outtakeWheel1 = null;
+    private Servo clawLeft = null;
+    private Servo clawRight = null;
+    private DcMotor duckWheel = null;
+    private DcMotor returnMotor = null;
+    //private Robot_OmniDrive robot = new Robot_OmniDrive();
+    private final ElapsedTime runtime = new ElapsedTime();
+    private BNO055IMU imu;
     /**
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
      * localization engine.
@@ -103,17 +131,25 @@ public class RedSideAutoLeft extends LinearOpMode {
         initVuforia();
         initTfod();
 
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
 
-        leftWheelF = hardwareMap.get(DcMotor.class, "D1");
-        rightWheelF = hardwareMap.get(DcMotor.class, "D2");
-        leftWheelR = hardwareMap.get(DcMotor.class, "D3");
-        rightWheelR = hardwareMap.get(DcMotor.class, "D4");
-        armWheel = hardwareMap.get(DcMotor.class, "A1");
-        intakeWheel1 = hardwareMap.get(DcMotor.class, "I1");
-        intakeWheel2 = hardwareMap.get(DcMotor.class, "I2");
-        wobbleServoHand = hardwareMap.get(Servo.class, "S2");
-        ringPush = hardwareMap.get(Servo.class, "P1");
-        outtakeWheel1 = hardwareMap.get(DcMotor.class, "O1");
+
+
+        leftWheelF = hardwareMap.dcMotor.get("D1");
+        rightWheelF = hardwareMap.dcMotor.get("D2");
+        leftWheelR = hardwareMap.dcMotor.get("D3");
+        rightWheelR = hardwareMap.dcMotor.get("D4");
+        //color = myOpMode.hardwareMap.get(ColorSensor.class, "Color");
+
+        clawLeft = hardwareMap.get(Servo.class, "CL");
+        clawRight = hardwareMap.get(Servo.class, "CR");
+        duckWheel = hardwareMap.get(DcMotor.class, "duck");
+        returnMotor = hardwareMap.get(DcMotor.class, "return");
+
+
+        returnMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+
         /**
          * Activate TensorFlow Object Detection before we wait for the start command.
          * Do it here so that the Camera Stream window will have the TensorFlow annotations visible.
@@ -129,9 +165,10 @@ public class RedSideAutoLeft extends LinearOpMode {
             // (typically 1.78 or 16/9).
 
             // Uncomment the following line if you want to adjust the magnification and/or the aspect ratio of the input images.
-            tfod.setZoom(3.5, 1.78);
+            //tfod.setZoom(3.5, 1.78);
             //Sets the number of pixels to obscure on the left, top, right, and bottom edges of each image passed to the TensorFlow object detector. The size of the images are not changed, but the pixels in the margins are colored black.
-            tfod.setClippingMargins(200, 150, 200, 150);
+            tfod.setClippingMargins(120,160,120,160);
+            tfod.setZoom(1.7, 2.5);
         }
 
         /** Wait for the game to begin */
@@ -139,21 +176,26 @@ public class RedSideAutoLeft extends LinearOpMode {
         double a = getBatteryVoltage();
         telemetry.addData("voltage", a);
 
+
+
         telemetry.update();
+
 
         waitForStart();
 
         if (opModeIsActive()) {
-            int r1 = detectRing();
+            int r1 = detectDuck();
             telemetry.addData(String.format("  r1 (%d)", 99999), "%d ",
                     r1);
-            if (r1 == 1) {
-                caseB();
-            } else if (r1 == 4) {
-                caseC();
-            } else {
-                caseA();
-            }
+            telemetry.update();
+            //sleep(1000);
+            imuInit();
+
+            //hardcode for testing
+            //caseLoc(3);
+
+            caseLoc(r1);
+
 
 
         }
@@ -167,7 +209,7 @@ public class RedSideAutoLeft extends LinearOpMode {
 
     private void move(double drive,
                       double strafe,
-                      double rotate) {
+                      double rotate, double power) {
 
         double powerLeftF;
         double powerRightF;
@@ -180,67 +222,115 @@ public class RedSideAutoLeft extends LinearOpMode {
         powerRightF = drive - strafe - rotate;
         powerRightR = drive + strafe - rotate;
 
-        leftWheelF.setPower(-powerLeftF);
-        leftWheelR.setPower(-powerLeftR);
+        telemetry.addData("LeftWheelF 0=%d", leftWheelF.getCurrentPosition());
 
-        rightWheelF.setPower(powerRightF);
-        rightWheelR.setPower(powerRightR);
+
+        leftWheelF.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftWheelR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightWheelF.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightWheelR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        leftWheelF.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftWheelR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightWheelF.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightWheelR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+
+        leftWheelF.setTargetPosition(leftWheelF.getCurrentPosition() + (int) (-powerLeftF));
+        leftWheelR.setTargetPosition(leftWheelR.getCurrentPosition() + (int) (-powerLeftR));
+
+        rightWheelF.setTargetPosition(rightWheelF.getCurrentPosition() + (int) (powerRightF));
+        rightWheelR.setTargetPosition(rightWheelR.getCurrentPosition() + (int) (powerRightR));
+
+        leftWheelF.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        leftWheelR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightWheelF.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightWheelR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        leftWheelF.setPower(power);
+        leftWheelR.setPower(power);
+        rightWheelF.setPower(power);
+        rightWheelR.setPower(power);
+
+        telemetry.addData("LeftWheelF 1=%d", leftWheelF.getCurrentPosition());
+        telemetry.update();
+
+
+        sleep(500);
+
+        leftWheelF.setPower(0);
+        leftWheelR.setPower(0);
+        rightWheelF.setPower(0);
+        rightWheelR.setPower(0);
     }
 
-    private void shoot(double intake) {
+    private void slideHigh() {
         //drive = -gamepad1.left_stick_y;  // Negative because the gamepad is weird
         //strafe = gamepad1.left_stick_x;
         //rotate = gamepad1.right_stick_x;
-        double voltageFactor = getFactorOfVoltage();
-        double powerIntake;
-        powerIntake = -intake;
-        intakeWheel1.setPower(powerIntake * voltageFactor);
-        intakeWheel2.setPower(-powerIntake * voltageFactor);
+        returnMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        returnMotor.setTargetPosition(returnMotor.getCurrentPosition() + 720);
+        returnMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        returnMotor.setPower(1);
     }
 
-    private void raiseArm(double raise) {
-        double powerRaise;
-        powerRaise = raise;
-        armWheel.setPower(powerRaise);
+    private void slideMiddle() {
+        //drive = -gamepad1.left_stick_y;  // Negative because the gamepad is weird
+        //strafe = gamepad1.left_stick_x;
+        //rotate = gamepad1.right_stick_x;
+        returnMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        returnMotor.setTargetPosition(returnMotor.getCurrentPosition() + 500);
+        returnMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        returnMotor.setPower(1);
     }
 
-    private void lowerArm(double lower) {
-        double powerLower;
-        powerLower = lower;
-        armWheel.setPower(-powerLower);
+    private void slideLow() {
+        //drive = -gamepad1.left_stick_y;  // Negative because the gamepad is weird
+        //strafe = gamepad1.left_stick_x;
+        //rotate = gamepad1.right_stick_x;
+        returnMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        returnMotor.setTargetPosition(returnMotor.getCurrentPosition() + 200);
+        returnMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        returnMotor.setPower(1);
     }
 
-    private void ringPush() {
-        ringPush.setPosition(0.7);
-        sleep(300);
-        ringPush.setPosition(1);
+    private void slideDrop() {
+        //drive = -gamepad1.left_stick_y;  // Negative because the gamepad is weird
+        //strafe = gamepad1.left_stick_x;
+        //rotate = gamepad1.right_stick_x;
+
+        returnMotor.setPower(0);
     }
 
-    private void autoShoot() {
-        move(0, 0, 0.5);
-        sleep(100);
-        move(0, 0, 0);
-        shoot(0.95);
-        sleep(500);
-        ringPush();
-        sleep(300);
-        move(0, -1, 0);
-        sleep(250);
-        move(0, 0, 0);
-        sleep(500);
-        ringPush();
-        sleep(300);
-        move(0, -1, 0);
-        sleep(250);
-        move(0, 0, 0);
-        sleep(500);
-        ringPush();
-        sleep(300);
-        shoot(0);
+    private void duckSpin() {
+        duckWheel.setPower(0.75);
+        sleep(3000);
+        duckWheel.setPower(0);
+        //sleep(200);
     }
 
-    private int detectRing() {
-        while (opModeIsActive()) {
+    private void clawClose() {
+        //clawLeft.setPosition(0.5);
+        //clawRight.setPosition(0.5);
+        //close
+        clawLeft.setPosition(0.09);
+        clawRight.setPosition(0.37);
+    }
+
+    private void clawOpen() {
+        //clawLeft.setPosition(0);
+        //clawRight.setPosition(1);
+        //open
+        clawLeft.setPosition(0);
+        clawRight.setPosition(0.50);
+    }
+
+    private int detectDuck() {
+
+        int iTimeOut = 5;
+        int j = 0;
+
+        while (opModeIsActive() && j < iTimeOut) {
             if (tfod != null) {
                 // getUpdatedRecognitions() will return null if no new information is available since
                 // the last time that call was made.
@@ -251,141 +341,112 @@ public class RedSideAutoLeft extends LinearOpMode {
                     // step through the list of recognitions and display boundary info.
                     int i = 0;
                     for (Recognition recognition : updatedRecognitions) {
-                        telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                        test = recognition.getLabel();
-                        telemetry.addLine(test);
-                        telemetry.addData(String.format("test (%d)", i), test);
-                        telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
-                                recognition.getLeft(), recognition.getTop());
-                        telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
-                                recognition.getRight(), recognition.getBottom());
-                    }
-                    telemetry.update();
+                        if (recognition.getWidth() < 100 && recognition.getHeight() < 100
+                                && (0.75 < recognition.getWidth() / recognition.getHeight() || recognition.getWidth() / recognition.getHeight() < 1.25)) {
 
-                    if (test.equals("Single")) {
-                        telemetry.addLine("single ring");
-                        telemetry.update();
-                        return 1;
-                    } else if (test.equals("Quad")) {
-                        telemetry.addLine("quad ring");
-                        telemetry.update();
-                        return 4;
-                    } else {
-                        telemetry.addLine("nothing");
-                        telemetry.update();
-                        return 0;
-                    }
+                            telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
+                            telemetry.addData(String.format("  right (%d)", i), "%.03f"
+                                    , recognition.getRight() * 1000);
 
+                            // Robot is place on Left side
+                            int pos1_left = 350000;
+                            int pos2_left = 150000;
+
+                            if (recognition.getRight() * 1000 >= pos1_left) {
+
+                                telemetry.addData("Left pos", 3);
+                                //r_pos = 3;
+                                //high
+                                return 3;
+
+                            } else if (recognition.getRight() * 1000 >= pos2_left) {
+
+                                telemetry.addData("Left pos", 2);
+                                //r_pos = 2;
+                                //mid
+                                return 2;
+
+                            } else {
+
+                                telemetry.addData("Left pos", 1);
+                                //r_pos = 1;
+                                //low
+                                return 1;
+
+                            }
+
+                        }
+                    }
                 }
             }
+            sleep(500);
+            j++;
         }
-
-        return 0;
+        return 1;
     }
 
-    private void caseB() {
-        sleep(3500);
-        wobbleServoHand.setPosition(1);
-        sleep(500);
-        raiseArm(0.5);
-        sleep(200);
-        move(0.75, 0, 0);
-        sleep(3000);
-        move(0, 0, 0);
-        sleep(300);
-        autoShoot();
-        move(0.75, 0, 0);
-        sleep(1750);
-        move(0, 0.75, 0);
-        sleep(1950);
-        move(0, 0, 0);
-        sleep(300);
-        lowerArm(0.5);
-        sleep(300);
-        lowerArm(0);
-        sleep(500);
-        wobbleServoHand.setPosition(0);
-        sleep(200);
-        raiseArm(0.5);
-        sleep(300);
-        raiseArm(0);
-        sleep(1000);
-        move(0, -0.75, 0);
-        sleep(1500);
-    }
 
-    private void caseA() {
-        sleep(3500);
-        wobbleServoHand.setPosition(1);
-        sleep(500);
-        raiseArm(0.5);
-        sleep(200);
-        move(0.75, 0, 0);
-        sleep(3000);
-        move(0, 0, 0);
-        sleep(300);
-        autoShoot();
-        move(0.75, 0, 0);
-        sleep(1500);
-        move(0, 0, 0);
-        sleep(300);
-        move(0, 0, 0.75);
-        sleep(1250);
-        move(0.75, 0, 0);
-        sleep(1950);
-        move(0, 0, 0);
-        sleep(300);
-        lowerArm(0.5);
-        sleep(300);
-        lowerArm(0);
-        wobbleServoHand.setPosition(0);
-        sleep(1000);
-        move(-0.75, 0, 0);
-        sleep(1000);
-        move(0, 0.5, 0);
-        sleep(300);
-        raiseArm(0.5);
-        sleep(300);
-    }
+    private void caseLoc(int loc) {
+        clawClose();
+        gyroTurn(0);
+        //sleep(300);
+        move(0,-250,0,0.20);
+        move(0,-50,0,0.15);
+        //sleep(1450);
 
-    private void caseC() {
-        sleep(3500);
-        wobbleServoHand.setPosition(1);
+        if (loc == 1) {
+            //move(-5,0,0,0.25);
+            slideLow();
+        } else if (loc == 2) {
+            move(-8,0,0,0.25);
+            slideMiddle();
+        } else {
+            slideHigh();
+        }
+        sleep(100);
+        gyroTurn(0);
+        sleep(100);
+        gyroTurn(0);
+        sleep(100);
+        move(-50,0,0,0.5);
+        move(0,0,0,0.5);
+        sleep(100);
+        clawOpen();
+        sleep(100);
+        if (loc == 2) {
+            move(8,0,0,0.25);
+        }
+        move(75,0,0,0.5);
         sleep(500);
-        raiseArm(0.5);
+        move(0,75,0,0.5);
+        sleep(100);
+        move(0,0,0,0.5);
+        slideDrop();
+        move(0,0,-80,0.5);
         sleep(200);
-        move(0.75, 0, 0);
-        sleep(3000);
-        move(0, 0, 0);
-        sleep(300);
-        autoShoot();
-        move(0.75, 0, 0);
-        sleep(2500);
-        move(0, 0, 0);
-        sleep(300);
-        move(0, 0, 0.5);
-        sleep(1500);
-        move(0.75, 0, 0);
-        sleep(2500);
-        move(0, 0, 0);
-        sleep(300);
-        lowerArm(0.5);
-        sleep(300);
-        lowerArm(0);
-        wobbleServoHand.setPosition(0);
+        gyroTurn(-95);
+        sleep(100);
+        gyroTurn(-95);
         sleep(200);
-        raiseArm(0.5);
-        sleep(300);
-        raiseArm(0);
-        sleep(1000);
-        move(-0.75, 0, 0);
-        sleep(1500);
-        move(0, 0, -0.5);
-        sleep(1050);
-        move(-0.75, 0, 0);
-        sleep(1750);
-        move(0, 0, 0);
-
+        move(1400,0,0,0.5);
+        move(1100,0,0,0.25);
+        sleep(200);
+        gyroTurn(-90);
+        sleep(100);
+        gyroTurn(-90);
+        sleep(250);
+        move(0,-100,0,0.25);
+        move(0,-100,0,0.15);
+        gyroTurn(-90);
+        sleep(100);
+        gyroTurn(-90);
+        move(25,0,0,0.25);
+        move(0,-25,0,0.25);
+        sleep(250);
+        duckSpin();
+        sleep(250);
+        move(0,500,0,0.35);
+        gyroTurn(-90);
     }
 
     /**
@@ -396,9 +457,9 @@ public class RedSideAutoLeft extends LinearOpMode {
          * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
          */
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
         parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
-
 
         //  Instantiate the Vuforia engine
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
@@ -421,39 +482,26 @@ public class RedSideAutoLeft extends LinearOpMode {
         double currentVoltage = getBatteryVoltage();
         double mult;
         if (currentVoltage >= 14.6) {
-            mult = 0.80;
-        } else if (currentVoltage >= 14.5) {
-            mult = 0.81;
-        } else if (currentVoltage >= 14.4) {
             mult = 0.82;
         } else if (currentVoltage >= 14.3) {
-            mult = 0.83;
+            mult = 0.84;
         } else if (currentVoltage >= 14.2) {
             mult = 0.84;
-        } else if (currentVoltage >= 14.1) {
-            mult = 0.85;
         } else if (currentVoltage >= 14.0) {
             mult = 0.86;
-        } else if (currentVoltage >= 13.9) {
-            mult = 0.87;
-        } else if (currentVoltage >= 13.8) {
-            mult = 0.88;
-        } else if (currentVoltage >= 13.7) {
-            mult = 0.89;
         } else if (currentVoltage >= 13.6) {
-            mult = 0.90;
-        } else if (currentVoltage >= 13.5) {
-            mult = 0.91;
+            mult = 0.87;
         } else if (currentVoltage >= 13.4) {
             mult = 0.92;
         } else if (currentVoltage <= 12.5) {
             telemetry.addLine("Change the battery!");
             mult = 1;
         } else {
-            mult = 0.95;
+            mult = 0.98;
         }
         return mult;
     }
+
 
     /**
      * Initialize the TensorFlow Object Detection engine.
@@ -462,8 +510,88 @@ public class RedSideAutoLeft extends LinearOpMode {
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
-        tfodParameters.minimumConfidence = 0.50;
+        tfodParameters.minResultConfidence = 0.50f;
+        tfodParameters.isModelTensorFlow2 = true;
+        tfodParameters.inputSize = 320;
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
-        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
+    }
+
+    private float getHeading() {
+        return imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+        //return 0;
+    }
+
+
+    /* Initializes Rev Robotics IMU */
+    private void imuInit() {
+        // Set up the parameters with which we will use our IMU.
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+        parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters.calibrationDataFile = "BNO055IMUCalibration.json";
+        parameters.loggingEnabled = false;
+        parameters.loggingTag = "imu";
+        imu.initialize(parameters);
+    }
+
+
+    private void gyroTurn(double target_angle) {
+        //double target_angle = 0 + deg;
+        leftWheelF.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftWheelR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightWheelF.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightWheelR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        telemetry.addData("heading : ", getHeading());
+        telemetry.addData("target_angle : ", target_angle);
+
+        double currentHeading = getHeading();
+        telemetry.addData("currentHeading : ", currentHeading);
+        double delta = Math.abs((currentHeading - target_angle));
+        telemetry.addData("delta : ", delta);
+
+        int i = 0;
+        int iMAX = 75;
+
+        while (i < iMAX && opModeIsActive() && delta > 0.4) {
+
+            double error_degrees = (target_angle - currentHeading) % 360; //Compute Error
+            //telemetry.addData("target_angle : ",target_angle);
+            //telemetry.addData("heading : ",getHeading());
+            double motor_output = Range.clip(error_degrees * TURN_P, -.6, .6);
+            //double test = (0 - getHeading()) % 360;//Get Correction
+            //telemetry.addData("test : ",test);
+            // Send corresponding powers to the motors\
+            leftWheelF.setPower(-1 * motor_output);
+            leftWheelR.setPower(-1 * motor_output);
+            rightWheelF.setPower(-1 * motor_output);
+            rightWheelR.setPower(-1 * motor_output);
+            //Orientation angles = imu.getAngularOrientation (AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+            //telemetry.addData("Spin Target : ",target_angle);
+            //telemetry.addData("Spin Degree : ",String.format(Locale.getDefault(), "%.1f", angles.firstAngle*-1));
+            //telemetry.update();
+            currentHeading = getHeading();
+            telemetry.addData("currentHeading : ", currentHeading);
+            delta = Math.abs((currentHeading - target_angle));
+            telemetry.addData("delta : ", delta);
+
+            i++;
+            telemetry.addData("i : ", i);
+            telemetry.update();
+
+        }
+
+        sleep(500);
+
+        leftWheelF.setPower(0);
+        leftWheelR.setPower(0);
+        rightWheelF.setPower(0);
+        rightWheelR.setPower(0);
+        //telemetry.addLine("AAAAAAA");
+        //telemetry.update();
+
     }
 }
+
+
+
