@@ -72,7 +72,7 @@ public class MasterDrive extends OpMode {
             } else {
                 slideMotor.setDirection(DcMotor.Direction.REVERSE);
             }
-            int target = 4650;
+            int target = 4700;
 
             slideMotor.setTargetPosition(target);
             slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -85,7 +85,7 @@ public class MasterDrive extends OpMode {
             } else {
                 slideMotor.setDirection(DcMotor.Direction.REVERSE);
             }
-            int target = 3100;
+            int target = 3150;
 
             slideMotor.setTargetPosition(target);
             slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -98,7 +98,7 @@ public class MasterDrive extends OpMode {
             } else {
                 slideMotor.setDirection(DcMotor.Direction.REVERSE);
             }
-            int target = 2100;
+            int target = 2150;
 
             slideMotor.setTargetPosition(target);
             slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
