@@ -123,7 +123,7 @@ public class RightSideAutoParking extends LinearOpMode {
             // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
             // should be set to the value of the images used to create the TensorFlow Object Detection model
             // (typically 16/9).
-            tfod.setZoom(2, 16.0/9.0);
+            tfod.setZoom(1.5, 16.0/9.0);
         }
 
         /** Wait for the game to begin */
@@ -259,6 +259,7 @@ public class RightSideAutoParking extends LinearOpMode {
         int iTimeOut = 5;
         int j = 0;
 
+        //if (opModeIsActive()) {
          while (opModeIsActive() && j < iTimeOut ) {
                 if (tfod != null) {
                     // getUpdatedRecognitions() will return null if no new information is available since
@@ -295,9 +296,10 @@ public class RightSideAutoParking extends LinearOpMode {
                         telemetry.update();
                     }
                 }
+            }
                 sleep(500);
                 j++;
-        }
+        //}
         telemetry.addData(String.format("No Image Dectected"), 0000);
         telemetry.update();
         return 2;
