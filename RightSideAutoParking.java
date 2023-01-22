@@ -30,14 +30,16 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
-import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
-
 import java.util.List;
+
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 
 /**
  * This 2020-2021 OpMode illustrates the basics of using the TensorFlow Object Detection API to
@@ -73,6 +75,11 @@ public class RightSideAutoParking extends LinearOpMode {
     private Servo ringPush = null;
     private DcMotor outtakeWheel1 = null;
     
+    private static String[] LABELS = {      
+        "1 Bolt",      
+        "2 Bulb",      
+        "3 Panel"};
+            
     private VuforiaLocalizer vuforia;
 
     private TFObjectDetector tfod;
@@ -87,7 +94,7 @@ public class RightSideAutoParking extends LinearOpMode {
         rightWheelR = hardwareMap.get(DcMotor.class, "rb");
         clawLeft = hardwareMap.get(Servo.class, "s0");
         clawRight = hardwareMap.get(Servo.class, "s1");
-         slideMotor = hardwareMap.get(DcMotor.class, "m1");
+        slideMotor = hardwareMap.get(DcMotor.class, "m1");
 
         
         slideMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -100,6 +107,13 @@ public class RightSideAutoParking extends LinearOpMode {
         //ringPush = hardwareMap.get(Servo.class, "P1");
         //outtakeWheel1 = hardwareMap.get(DcMotor.class, "O1");
         
+        initVuforia();
+        initTfod();
+        /**
+         * Activate TensorFlow Object Detection before we wait for the start command.
+         * Do it here so that the Camera Stream window will have the TensorFlow annotations visible.
+         **/
+
         if (tfod != null) {
             tfod.activate();
 
@@ -109,16 +123,48 @@ public class RightSideAutoParking extends LinearOpMode {
             // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
             // should be set to the value of the images used to create the TensorFlow Object Detection model
             // (typically 16/9).
-            tfod.setZoom(1, 16.0/9.0);
+            tfod.setZoom(2, 16.0/9.0);
         }
 
+        /** Wait for the game to begin */
+        telemetry.addData(">", "Press Play to start op mode");
+        telemetry.update();
         waitForStart();
-		
-		int return_value = 2;
-	
-		return_value = detectCone();
-		
+        
+        int return_value = 2;
+        return_value = detectCone();
         park(return_value);
+    }
+
+    private void initVuforia() {
+        /*
+         * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
+         */
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraDirection = CameraDirection.BACK;
+
+        //  Instantiate the Vuforia engine
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+    }
+
+    /**
+     * Initialize the TensorFlow Object Detection engine.
+     */
+    private void initTfod() {
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+            "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfodParameters.minResultConfidence = 0.75f;
+        tfodParameters.isModelTensorFlow2 = true;
+        tfodParameters.inputSize = 300;
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+
+        // Use loadModelFromAsset() if the TF Model is built in as an asset by Android Studio
+        // Use loadModelFromFile() if you have downloaded a custom team model to the Robot Controller's FLASH.
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
+        // tfod.loadModelFromFile(TFOD_MODEL_FILE, LABELS);
     }
 
     private void move(double drive,
@@ -207,10 +253,9 @@ public class RightSideAutoParking extends LinearOpMode {
             clawLeft.setPosition(0.14);
             clawRight.setPosition(0.33);
     }
-	
-	private int detectCone() {
+    
+    private int detectCone() {
 
-        //private static String[] LABELS = {      "1 Bolt",      "2 Bulb",      "3 Panel"};
         int iTimeOut = 5;
         int j = 0;
 
@@ -221,7 +266,7 @@ public class RightSideAutoParking extends LinearOpMode {
                     List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
                     if (updatedRecognitions != null) {
                         telemetry.addData("# Objects Detected", updatedRecognitions.size());
-
+                        telemetry.update();
                         // step through the list of recognitions and display image position/size information for each one
                         // Note: "Image number" refers to the randomized image orientation/number
                         for (Recognition recognition : updatedRecognitions) {
@@ -234,29 +279,32 @@ public class RightSideAutoParking extends LinearOpMode {
                             telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100 );
                             telemetry.addData("- Position (Row/Col)","%.0f / %.0f", row, col);
                             telemetry.addData("- Size (Width/Height)","%.0f / %.0f", width, height);
+                            telemetry.update();
+                            
+                            if (recognition.getLabel().equals("1 Bolt")) {
+                                    return 1;
+                                } else if (recognition.getLabel().equals("2 Bulb")) 
+                                {
+                                    return 2;
+                                } else 
+                                {
+                                    return 3;
+                                }
                         
-							if (recognition.getLabel().equals("1 Bolt")) {
-									return 1;
-								} else if (recognition.getLabel().equals("2 Bulb")) 
-								{
-									return 2;
-								} else 
-								{
-									return 3;
-								}
-						
-						}
+                        }
                         telemetry.update();
                     }
                 }
                 sleep(500);
-				j++;
+                j++;
         }
+        telemetry.addData(String.format("No Image Dectected"), 0000);
+        telemetry.update();
         return 2;
     }
-			
+            
 
-	private void park(int where_to_go) {
+    private void park(int where_to_go) {
         sleep(2000);
         clawLeft();
         sleep(300);
@@ -299,7 +347,7 @@ public class RightSideAutoParking extends LinearOpMode {
         
         else if (where_to_go ==3)
         {
-        //park robot at position 3
+        //Park robot at position 3
         move(0,0.5,0);
         sleep(1000);
         move(0,0,0);
@@ -312,6 +360,6 @@ public class RightSideAutoParking extends LinearOpMode {
         move(0,0,0);
         }
     }
-	
-	
+    
+    
 }
