@@ -2,7 +2,7 @@
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted (subject to the limitations in the disclaimer below) provided that
- * the following conditions are met:
+ * the Afollowing conditions are met:
  *
  * Redistributions of source code must retain the above copyright notice, this list
  * of conditions and the following disclaimer.
@@ -49,9 +49,9 @@ import java.util.List;
  * IMPORTANT: In order to use this OpMode, you need to obtain your own Vuforia license key as
  * is explained below.
  */
-@Autonomous(name = "BlueSideAutoLeft2", group = "Opmode RamEaters")
+@Autonomous(name = "RightSideAutoParking", group = "Profound Pythons")
 //@Disabled
-public class BlueSideAutoLeft2 extends LinearOpMode {
+public class RightSideAutoParking extends LinearOpMode {
     private static final String TFOD_MODEL_ASSET = "PowerPlay.tflite";
     private int random = 10;
 
@@ -109,7 +109,7 @@ public class BlueSideAutoLeft2 extends LinearOpMode {
             // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
             // should be set to the value of the images used to create the TensorFlow Object Detection model
             // (typically 16/9).
-            tfod.setZoom(1.5, 16.0/9.0);
+            tfod.setZoom(1, 16.0/9.0);
         }
 
         waitForStart();
@@ -214,46 +214,47 @@ public class BlueSideAutoLeft2 extends LinearOpMode {
         int iTimeOut = 5;
         int j = 0;
 
-        while (opModeIsActive() && j < iTimeOut) {
-            if (tfod != null) {
-                // getUpdatedRecognitions() will return null if no new information is available since
-                // the last time that call was made.
-                List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+         while (opModeIsActive() && j < iTimeOut ) {
+                if (tfod != null) {
+                    // getUpdatedRecognitions() will return null if no new information is available since
+                    // the last time that call was made.
+                    List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+                    if (updatedRecognitions != null) {
+                        telemetry.addData("# Objects Detected", updatedRecognitions.size());
 
-                if (updatedRecognitions != null) {
-                    telemetry.addData("# Object Detected", updatedRecognitions.size());
-                    // step through the list of recognitions and display boundary info.
-                    int i = 0;
-                    for (Recognition recognition : updatedRecognitions)
-                    {
-                            telemetry.addData(String.format("XXXXXX label (%d)", i), recognition.getLabel());
-							
-							telemetry.update();
+                        // step through the list of recognitions and display image position/size information for each one
+                        // Note: "Image number" refers to the randomized image orientation/number
+                        for (Recognition recognition : updatedRecognitions) {
+                            double col = (recognition.getLeft() + recognition.getRight()) / 2 ;
+                            double row = (recognition.getTop()  + recognition.getBottom()) / 2 ;
+                            double width  = Math.abs(recognition.getRight() - recognition.getLeft()) ;
+                            double height = Math.abs(recognition.getTop()  - recognition.getBottom()) ;
 
-
-                            if (recognition.getLabel().equals("1 Bolt")) {
-
-                                return 1;
-
-                            } else if (recognition.getLabel().equals("2 Bulb")) 
-							{
-
-                                return 2;
-
-                            } else 
-							{
-                                return 3;
-							}
-
+                            telemetry.addData(""," ");
+                            telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100 );
+                            telemetry.addData("- Position (Row/Col)","%.0f / %.0f", row, col);
+                            telemetry.addData("- Size (Width/Height)","%.0f / %.0f", width, height);
                         
+							if (recognition.getLabel().equals("1 Bolt")) {
+									return 1;
+								} else if (recognition.getLabel().equals("2 Bulb")) 
+								{
+									return 2;
+								} else 
+								{
+									return 3;
+								}
+						
+						}
+                        telemetry.update();
                     }
                 }
-            }
-            sleep(500);
-            j++;
+                sleep(500);
+				j++;
         }
         return 2;
     }
+			
 
 	private void park(int where_to_go) {
         sleep(2000);
@@ -286,6 +287,7 @@ public class BlueSideAutoLeft2 extends LinearOpMode {
         move(0.25,0,0);
         sleep(1800);
         move(0,0,0);
+        sleep(500);
      
         if (where_to_go ==1)
         {
@@ -295,19 +297,21 @@ public class BlueSideAutoLeft2 extends LinearOpMode {
         move(0,0,0);
         }
         
-        else if (where_to_go ==2)
+        else if (where_to_go ==3)
         {
-        //park robot at position 2
-        move(0,0,0);
-        sleep(750);
-        }
-        
-        else
-        {
-        //Park robot at position 3
+        //park robot at position 3
         move(0,0.5,0);
         sleep(1000);
         move(0,0,0);
         }
+        
+        else
+        {
+        //Park robot at position 2
+        //Do nothing
+        move(0,0,0);
+        }
     }
+	
+	
 }
