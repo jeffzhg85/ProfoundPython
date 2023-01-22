@@ -113,8 +113,12 @@ public class BlueSideAutoLeft2 extends LinearOpMode {
         }
 
         waitForStart();
-        sleep(1000);
-        park();
+		
+		int return_value = 2;
+	
+		return_value = detectCone();
+		
+        park(return_value);
     }
 
     private void move(double drive,
@@ -223,33 +227,20 @@ private int detectCone() {
                         if (recognition.getWidth() < 100 && recognition.getHeight() < 100
                                 && (0.75 < recognition.getWidth() / recognition.getHeight() || recognition.getWidth() / recognition.getHeight() < 1.25)) {
 
-                            telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                            telemetry.addData(String.format("  right (%d)", i), "%.03f"
-                                    , recognition.getRight() * 1000);
+                            telemetry.addData(String.format("XXXXXX label (%d)", i), recognition.getLabel());
+							
+							telemetry.update();
 
-                            // Robot is place on Left side
-                            int pos1_left = 350000;
-                            int pos2_left = 150000;
 
                             if (recognition.getLabel().equals("1 Bolt")) {
 
-                                //telemetry.addData("Left pos", 3);
-                                //r_pos = 3;
-                                //high
                                 return 1;
 
                             } else if (recognition.getLabel().equals("2 Bulb")) {
 
-                                //telemetry.addData("Left pos", 2);
-                                //r_pos = 2;
-                                //mid
                                 return 2;
 
                             } else {
-
-                                //telemetry.addData("Left pos", 1);
-                                //r_pos = 1;
-                                //low
                                 return 3;
 
                             }
@@ -261,10 +252,12 @@ private int detectCone() {
             sleep(500);
             j++;
         }
-        return 1;
+        return 2;
     }
 
-    private void park() {
+    private void park(int where_to_go) 
+	{
+		
         sleep(2000);
         clawLeft();
         sleep(300);
@@ -283,19 +276,30 @@ private int detectCone() {
         clawRight();
         sleep(1000);
         
-        if (detectCone()==1)
+        if (where_to_go == 1)
         {
-        move(-0.15,0,0);
-        sleep(650);
-        move(0,0,0);
-        move(0,0.25,0);
-        sleep(1500);
-        move(0,0,0);
-        move(0,0,-0.1);
-        sleep(500);
-        move(0.45,0,0);
-        sleep(750);
+			// park robot to position 1 
+			move(-0.15,0,0);
+			sleep(650);
+			move(0,0,0);
+			move(0,0.25,0);
+			sleep(1500);
+			move(0,0,0);
+			move(0,0,-0.1);
+			sleep(500);
+			move(0.45,0,0);
+			sleep(750);
         }
+		else if (where_to_go == 3)
+		{
+			// park robot to position 3
+			
+		}
+		else
+		{
+			// park robot to position 2
+			// maybe don't need to anything extra
+		}
         //move(0.5, 0, 0);
         //sleep(900);
         //move(0, 0, 0);
