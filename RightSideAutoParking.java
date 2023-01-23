@@ -35,6 +35,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import java.util.List;
+import java.util.Scanner;
 
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection;
@@ -124,6 +125,8 @@ public class RightSideAutoParking extends LinearOpMode {
             // should be set to the value of the images used to create the TensorFlow Object Detection model
             // (typically 16/9).
             tfod.setZoom(1.5, 16.0/9.0);
+            tfod.setClippingMargins(200, 150, 200, 0);
+            
         }
 
         /** Wait for the game to begin */
@@ -254,57 +257,52 @@ public class RightSideAutoParking extends LinearOpMode {
             clawRight.setPosition(0.33);
     }
     
+
     private int detectCone() {
 
         int iTimeOut = 5;
         int j = 0;
 
         //if (opModeIsActive()) {
-         while (opModeIsActive() && j < iTimeOut ) {
-                if (tfod != null) {
-                    // getUpdatedRecognitions() will return null if no new information is available since
-                    // the last time that call was made.
-                    List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
-                    if (updatedRecognitions != null) {
-                        telemetry.addData("# Objects Detected", updatedRecognitions.size());
+     while (opModeIsActive() && j < iTimeOut ) {
+            if (tfod != null) {
+                // getUpdatedRecognitions() will return null if no new information is available since
+                // the last time that call was made.
+                List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+                if (updatedRecognitions != null) {
+                    telemetry.addData("# Objects Detected", updatedRecognitions.size());
+                    telemetry.update();
+                    // step through the list of recognitions and display image position/size information for each one
+                    // Note: "Image number" refers to the randomized image orientation/number
+                    for (Recognition recognition : updatedRecognitions) {
+                        double col = (recognition.getLeft() + recognition.getRight()) / 2 ;
+                        double row = (recognition.getTop()  + recognition.getBottom()) / 2 ;
+                        double width  = Math.abs(recognition.getRight() - recognition.getLeft()) ;
+                        double height = Math.abs(recognition.getTop()  - recognition.getBottom()) ;
+                        telemetry.addData(""," ");
+                        telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100 );
+                        telemetry.addData("- Position (Row/Col)","%.0f / %.0f", row, col);
+                        telemetry.addData("- Size (Width/Height)","%.0f / %.0f", width, height);
                         telemetry.update();
-                        // step through the list of recognitions and display image position/size information for each one
-                        // Note: "Image number" refers to the randomized image orientation/number
-                        for (Recognition recognition : updatedRecognitions) {
-                            double col = (recognition.getLeft() + recognition.getRight()) / 2 ;
-                            double row = (recognition.getTop()  + recognition.getBottom()) / 2 ;
-                            double width  = Math.abs(recognition.getRight() - recognition.getLeft()) ;
-                            double height = Math.abs(recognition.getTop()  - recognition.getBottom()) ;
-
-                            telemetry.addData(""," ");
-                            telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100 );
-                            telemetry.addData("- Position (Row/Col)","%.0f / %.0f", row, col);
-                            telemetry.addData("- Size (Width/Height)","%.0f / %.0f", width, height);
-                            telemetry.update();
                             
-                            if (recognition.getLabel().equals("1 Bolt")) {
-                                    return 1;
-                                } else if (recognition.getLabel().equals("2 Bulb")) 
-                                {
-                                    return 2;
-                                } else 
-                                {
-                                    return 3;
-                                }
-                        
-                        }
-                        telemetry.update();
+                        if (recognition.getLabel().equals("1 Bolt")) {
+                                return 1;
+                            } 
+                            else if (recognition.getLabel().equals("2 Bulb")) {
+                                return 2;
+                            } 
+                            else {
+                                return 3;
+                            }
                     }
                 }
             }
-                sleep(500);
-                j++;
-        //}
-        telemetry.addData(String.format("No Image Dectected"), 0000);
-        telemetry.update();
-        return 2;
-    }
-            
+            sleep(500);
+            j++;
+            //System.out.println("j="+j);
+        }
+    return 2;
+    }      
 
     private void park(int where_to_go) {
         sleep(2000);
@@ -331,14 +329,14 @@ public class RightSideAutoParking extends LinearOpMode {
         move(0,0.25,0);
         sleep(1500);
         move(0,0,0);
-        sleep(3000);
+        sleep(1500);
         move(0,0,-0.15);
         sleep(500);
         move(0.25,0,0);
         sleep(1800);
         move(0,0,0);
         sleep(500);
-     
+  
         if (where_to_go ==1)
         {
         //Park robot at location 1
