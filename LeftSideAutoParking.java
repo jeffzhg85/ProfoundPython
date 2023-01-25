@@ -1,4 +1,4 @@
-c/* Copyright (c) 2019 FIRST. All rights reserved.
+/* Copyright (c) 2019 FIRST. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted (subject to the limitations in the disclaimer below) provided that
@@ -52,9 +52,9 @@ import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
  * IMPORTANT: In order to use this OpMode, you need to obtain your own Vuforia license key as
  * is explained below.
  */
-@Autonomous(name = "RightSideAutoParking", group = "Profound Pythons")
+@Autonomous(name = "LeftSideAutoParking", group = "Profound Pythons")
 //@Disabled
-public class RightSideAutoParking extends LinearOpMode {
+public class LeftSideAutoParking extends LinearOpMode {
     private static final String TFOD_MODEL_ASSET = "PowerPlay.tflite";
     private int random = 10;
 
@@ -301,23 +301,21 @@ public class RightSideAutoParking extends LinearOpMode {
             j++;
             //System.out.println("j="+j);
         }
-    return 2;
+    return 3;
     }      
 
     private void park(int where_to_go) {
-        sleep(2000);
+        sleep(1000);
         clawLeft();
         sleep(300);
-        move(0.25, 0,0);
-        sleep(600);
-        move(0,0,0);
         slideLow();
         sleep(450);
-        move(0, -0.25, 0.025);
-        sleep(2100);
+        move(0, 0.25, 0.025);
+        sleep(900);
         move(0,0,0);
+        move(0,0,-0.1);
         sleep(1000);
-        move(0.15,0,0);
+        move(0.25,0,0);
         sleep(450);
         move(0,0,0);
         clawRight();
@@ -326,13 +324,13 @@ public class RightSideAutoParking extends LinearOpMode {
         sleep(650);
         slideReset();
         move(0,0,0);
-        move(0,0.25,0);
+        move(0,-0.25,0);
         sleep(1500);
         move(0,0,0);
         sleep(1500);
-        move(0,0,-0.15);
+        move(0,0,0.1);
         sleep(500);
-        move(0.25,0,0);
+        move(0.275,0,0);
         sleep(1800);
         move(0,0,0);
         sleep(500);
